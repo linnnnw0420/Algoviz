@@ -5,6 +5,7 @@ import { ALGORITHM_OPTIONS } from "@/lib/algorithms/list";
 
 type Props = {
   algo: AlgoId; setAlgo: (v: AlgoId) => void;
+  compareAlgo: AlgoId; setCompareAlgo: (v: AlgoId) => void;
   n: number; setN: (v: number) => void;
   speed: number; setSpeed: (v: number) => void;
   dist: Distribution; setDist: (d: Distribution) => void;
@@ -17,6 +18,17 @@ export default function ControlPanel(p: Props) {
     <div className="panel row">
       <label>Algorithm</label>
       <select value={p.algo} onChange={e => p.setAlgo(e.target.value as AlgoId)}>
+        {ALGORITHM_OPTIONS.map(opt => (
+          <option key={opt.id} value={opt.id}>{opt.label}</option>
+        ))}
+      </select>
+
+      <label>Compare With</label>
+      <select
+        value={p.compareAlgo}
+        disabled={!p.compare}
+        onChange={e => p.setCompareAlgo(e.target.value as AlgoId)}
+      >
         {ALGORITHM_OPTIONS.map(opt => (
           <option key={opt.id} value={opt.id}>{opt.label}</option>
         ))}

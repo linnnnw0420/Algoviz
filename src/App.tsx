@@ -21,15 +21,12 @@ const algos: Record<AlgoId, AlgoGenerator> = {
   quick: quickSort,
 };
 
-function nextAlgo(id: AlgoId): AlgoId {
-  if (ALGORITHM_SEQUENCE.length <= 1) return id;
-  const idx = ALGORITHM_SEQUENCE.indexOf(id);
-  if (idx === -1) return ALGORITHM_SEQUENCE[0];
-  return ALGORITHM_SEQUENCE[(idx + 1) % ALGORITHM_SEQUENCE.length];
-}
+const DEFAULT_PRIMARY: AlgoId = ALGORITHM_SEQUENCE[0] ?? "bubble";
+const DEFAULT_SECONDARY: AlgoId = ALGORITHM_SEQUENCE[1] ?? DEFAULT_PRIMARY;
 
 export default function App() {
-  const [algo, setAlgo] = useState<AlgoId>(ALGORITHM_SEQUENCE[0]);
+  const [algo, setAlgo] = useState<AlgoId>(DEFAULT_PRIMARY);
+  const [compareAlgo, setCompareAlgo] = useState<AlgoId>(DEFAULT_SECONDARY);
   const [dist, setDist] = useState<Distribution>("Uniform");
   const [n, setN] = useState(50);
   const [speed, setSpeed] = useState(120);
@@ -40,8 +37,6 @@ export default function App() {
   const playerA = useMemo(() => new StepPlayer(setStep), []);
   const playerB = useMemo(() => new StepPlayer(setStepB), []);
   const arrRef = useRef<number[]>([]);
-
-  const comparisonAlgo = nextAlgo(algo);
 
   function generate() {
     const a = genArray(n, dist, 1, 100);
@@ -67,7 +62,7 @@ export default function App() {
       playerA.play();
     } else {
       // left fixed: selected algo; right: a second algorithm for comparison
-      const other = comparisonAlgo;
+      const other = compareAlgo;
       const a1 = [...base], a2 = [...base];
       playerA.load(buildSteps(a1, algo));
       playerB.load(buildSteps(a2, other));
@@ -83,6 +78,7 @@ export default function App() {
 
       <ControlPanel
         algo={algo} setAlgo={setAlgo}
+        compareAlgo={compareAlgo} setCompareAlgo={setCompareAlgo}
         dist={dist} setDist={setDist}
         n={n} setN={setN}
         speed={speed} setSpeed={setSpeed}
@@ -101,7 +97,7 @@ export default function App() {
         <ComparePane
           left={{ title: `Left: ${ALGORITHM_LABELS[algo] ?? algo}`, step }}
           right={{
-            title: `Right: ${ALGORITHM_LABELS[comparisonAlgo] ?? comparisonAlgo}`,
+            title: `Right: ${ALGORITHM_LABELS[compareAlgo] ?? compareAlgo}`,
             step: stepB,
           }}
         />
