@@ -14,3 +14,4 @@ export interface Step {
 }
 
 export type AlgoGenerator = (arr: Value[]) => Generator<Step, void, unknown>;
+export type AlgoId = "bubble" | "insertion" | "selection" | "merge" | "quick";

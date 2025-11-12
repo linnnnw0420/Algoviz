@@ -2,60 +2,110 @@ import React, { useMemo, useRef, useState } from "react";
 import ControlPanel from "./components/ControlPanel";
 import StatsBar from "./components/StatsBar";
 import VisualizerCanvas from "./components/VisualizerCanvas";
-import { StepPlayer } from "./lib/runner/StepPlayer";
-import { bubbleSort } from "./lib/algorithms/sort/bubble";
-import { quickSort } from "./lib/algorithms/sort/quick";
-import type { Step, AlgoGenerator } from "./lib/types";
+import ComparePane from "./components/ComparePane";
+import { StepPlayer } from "@/lib/runner/StepPlayer";
+import { bubbleSort } from "@/lib/algorithms/sort/bubble";
+import { insertionSort } from "@/lib/algorithms/sort/insertion";
+import { mergeSort } from "@/lib/algorithms/sort/merge";
+import { quickSort } from "@/lib/algorithms/sort/quick";
+import { selectionSort } from "@/lib/algorithms/sort/selection";
+import type { Step, AlgoGenerator, AlgoId } from "@/lib/types";
+import { genArray, targetLine, type Distribution } from "@/lib/data/generators";
+import { ALGORITHM_LABELS, ALGORITHM_SEQUENCE } from "@/lib/algorithms/list";
 
-const algos: Record<string, AlgoGenerator> = {
+const algos: Record<AlgoId, AlgoGenerator> = {
   bubble: bubbleSort,
-  quick: quickSort
+  insertion: insertionSort,
+  selection: selectionSort,
+  merge: mergeSort,
+  quick: quickSort,
 };
 
+function nextAlgo(id: AlgoId): AlgoId {
+  if (ALGORITHM_SEQUENCE.length <= 1) return id;
+  const idx = ALGORITHM_SEQUENCE.indexOf(id);
+  if (idx === -1) return ALGORITHM_SEQUENCE[0];
+  return ALGORITHM_SEQUENCE[(idx + 1) % ALGORITHM_SEQUENCE.length];
+}
+
 export default function App() {
-  const [algo, setAlgo] = useState<keyof typeof algos>("bubble");
+  const [algo, setAlgo] = useState<AlgoId>(ALGORITHM_SEQUENCE[0]);
+  const [dist, setDist] = useState<Distribution>("Uniform");
   const [n, setN] = useState(50);
   const [speed, setSpeed] = useState(120);
-  const [step, setStep] = useState<Step | undefined>();
-  const arrRef = useRef<number[]>([]);
-  const player = useMemo(() => new StepPlayer(setStep), []);
+  const [compare, setCompare] = useState(false);
 
-  function genArray() {
-    const a = Array.from({ length: n }, () => Math.floor(Math.random() * 100) + 1);
+  const [step, setStep] = useState<Step | undefined>();
+  const [stepB, setStepB] = useState<Step | undefined>(); // for compare
+  const playerA = useMemo(() => new StepPlayer(setStep), []);
+  const playerB = useMemo(() => new StepPlayer(setStepB), []);
+  const arrRef = useRef<number[]>([]);
+
+  const comparisonAlgo = nextAlgo(algo);
+
+  function generate() {
+    const a = genArray(n, dist, 1, 100);
     arrRef.current = a;
+    const line = targetLine(n, 1, 100); // visual goal line after sorting
+    // show initial state (mark op) — primary pane
     setStep({ op: { kind: "mark", i: -1 }, array: [...a] });
-    player.stop();
+    // compare pane initial (shows target line to hint the goal)
+    setStepB({ op: { kind: "mark", i: -1 }, array: [...line] });
+    playerA.stop(); playerB.stop();
   }
 
-  function buildSteps() {
-    const g = algos[algo](arrRef.current);
+  function buildSteps(a: number[], id: AlgoId) {
+    const g = algos[id](a);
     return Array.from(g);
   }
 
   function onPlay() {
-    const steps = buildSteps();
-    player.load(steps);
-    player.setSpeed(speed);
-    player.play();
+    const base = [...arrRef.current];
+    playerA.setSpeed(speed);
+    if (!compare) {
+      playerA.load(buildSteps(base, algo));
+      playerA.play();
+    } else {
+      // left fixed: selected algo; right: a second algorithm for comparison
+      const other = comparisonAlgo;
+      const a1 = [...base], a2 = [...base];
+      playerA.load(buildSteps(a1, algo));
+      playerB.load(buildSteps(a2, other));
+      playerA.setSpeed(speed);
+      playerB.setSpeed(speed);
+      playerA.play(); playerB.play();
+    }
   }
 
   return (
     <div className="app">
-      <h1>AlgoViz · 排序可视化</h1>
+      <h1>AlgoViz · Sorting Playground</h1>
+
       <ControlPanel
-        algo={algo}
-        setAlgo={v => setAlgo(v as any)}
-        n={n}
-        setN={setN}
-        speed={speed}
-        setSpeed={setSpeed}
-        onShuffle={genArray}
+        algo={algo} setAlgo={setAlgo}
+        dist={dist} setDist={setDist}
+        n={n} setN={setN}
+        speed={speed} setSpeed={setSpeed}
+        compare={compare} setCompare={setCompare}
+        onGenerate={generate}
         onPlay={onPlay}
-        onPause={() => player.pause()}
-        onStep={() => player.stepOnce()}
+        onPause={() => { playerA.pause(); playerB.pause(); }}
+        onStep={() => { playerA.stepOnce(); if (compare) playerB.stepOnce(); }}
       />
+
       <StatsBar step={step} />
-      <VisualizerCanvas step={step} />
+
+      {!compare ? (
+        <VisualizerCanvas step={step} />
+      ) : (
+        <ComparePane
+          left={{ title: `Left: ${ALGORITHM_LABELS[algo] ?? algo}`, step }}
+          right={{
+            title: `Right: ${ALGORITHM_LABELS[comparisonAlgo] ?? comparisonAlgo}`,
+            step: stepB,
+          }}
+        />
+      )}
     </div>
   );
 }

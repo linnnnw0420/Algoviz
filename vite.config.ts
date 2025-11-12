@@ -6,8 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: { port: 5173 },
   resolve: {
-    alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
-    },
+    alias: { "@": new URL("./src", import.meta.url).pathname }
   },
+  
 });

@@ -1,33 +1,49 @@
 import React from "react";
+import type { Distribution } from "@/lib/data/generators";
+import type { AlgoId } from "@/lib/types";
+import { ALGORITHM_OPTIONS } from "@/lib/algorithms/list";
 
 type Props = {
-  algo: string;
-  setAlgo: (v: string) => void;
-  n: number;
-  setN: (v: number) => void;
-  speed: number;
-  setSpeed: (v: number) => void;
-  onShuffle: () => void;
-  onPlay: () => void;
-  onPause: () => void;
-  onStep: () => void;
+  algo: AlgoId; setAlgo: (v: AlgoId) => void;
+  n: number; setN: (v: number) => void;
+  speed: number; setSpeed: (v: number) => void;
+  dist: Distribution; setDist: (d: Distribution) => void;
+  compare: boolean; setCompare: (b: boolean) => void;
+  onGenerate: () => void; onPlay: () => void; onPause: () => void; onStep: () => void;
 };
 
 export default function ControlPanel(p: Props) {
   return (
     <div className="panel row">
-      <select value={p.algo} onChange={e => p.setAlgo(e.target.value)}>
-        <option value="bubble">Bubble Sort</option>
-        <option value="quick">Quick Sort</option>
+      <label>Algorithm</label>
+      <select value={p.algo} onChange={e => p.setAlgo(e.target.value as AlgoId)}>
+        {ALGORITHM_OPTIONS.map(opt => (
+          <option key={opt.id} value={opt.id}>{opt.label}</option>
+        ))}
       </select>
-      <label>数量 {p.n}</label>
+
+      <label>Distribution</label>
+      <select value={p.dist} onChange={e => p.setDist(e.target.value as Distribution)}>
+        <option value="Uniform">Uniform</option>
+        <option value="Gaussian">Gaussian</option>
+        <option value="Nearly-sorted">Nearly-sorted</option>
+      </select>
+
+      <label>N = {p.n}</label>
       <input type="range" min={5} max={200} value={p.n} onChange={e => p.setN(+e.target.value)} />
-      <label>速度(ms) {p.speed}</label>
+
+      <label>Speed (ms) = {p.speed}</label>
       <input type="range" min={10} max={500} value={p.speed} onChange={e => p.setSpeed(+e.target.value)} />
-      <button className="btn" onClick={p.onShuffle}>生成</button>
-      <button className="btn primary" onClick={p.onPlay}>播放</button>
-      <button className="btn" onClick={p.onPause}>暂停</button>
-      <button className="btn" onClick={p.onStep}>单步</button>
+
+      <label style={{display:"flex", gap:6, alignItems:"center"}}>
+        <input type="checkbox" checked={p.compare} onChange={e => p.setCompare(e.target.checked)} />
+        Compare Mode
+      </label>
+
+      <button className="btn" onClick={p.onGenerate}>Generate</button>
+      <button className="btn primary" onClick={p.onPlay}>Play</button>
+      <button className="btn" onClick={p.onPause}>Pause</button>
+      <button className="btn" onClick={p.onStep}>Step</button>
     </div>
   );
 }
