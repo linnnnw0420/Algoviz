@@ -10,52 +10,75 @@ type Props = {
   speed: number; setSpeed: (v: number) => void;
   dist: Distribution; setDist: (d: Distribution) => void;
   compare: boolean; setCompare: (b: boolean) => void;
+  sound: boolean; setSound: (b: boolean) => void;
+  useWorker: boolean; setUseWorker: (b: boolean) => void;
   onGenerate: () => void; onPlay: () => void; onPause: () => void; onStep: () => void;
+  loading?: boolean;
 };
 
 export default function ControlPanel(p: Props) {
   return (
-    <div className="panel row">
-      <label>Algorithm</label>
-      <select value={p.algo} onChange={e => p.setAlgo(e.target.value as AlgoId)}>
-        {ALGORITHM_OPTIONS.map(opt => (
-          <option key={opt.id} value={opt.id}>{opt.label}</option>
-        ))}
-      </select>
+    <div className="panel controls-grid">
+      {/* Group 1: Algorithm Selection */}
+      <div className="control-group">
+        <label>Algorithm</label>
+        <select value={p.algo} onChange={e => p.setAlgo(e.target.value as AlgoId)}>
+          {ALGORITHM_OPTIONS.map(opt => (
+            <option key={opt.id} value={opt.id}>{opt.label}</option>
+          ))}
+        </select>
+        
+        <div className="row" style={{marginTop: 8}}>
+          <input type="checkbox" id="cmp" checked={p.compare} onChange={e => p.setCompare(e.target.checked)} />
+          <label htmlFor="cmp" style={{cursor:"pointer", margin:0, textTransform:"none", color:"var(--fg)"}}>Compare</label>
+          
+          <input type="checkbox" id="snd" checked={p.sound} onChange={e => p.setSound(e.target.checked)} style={{marginLeft: 8}} />
+          <label htmlFor="snd" style={{cursor:"pointer", margin:0, textTransform:"none", color:"var(--fg)"}}>Sound</label>
 
-      <label>Compare With</label>
-      <select
-        value={p.compareAlgo}
-        disabled={!p.compare}
-        onChange={e => p.setCompareAlgo(e.target.value as AlgoId)}
-      >
-        {ALGORITHM_OPTIONS.map(opt => (
-          <option key={opt.id} value={opt.id}>{opt.label}</option>
-        ))}
-      </select>
+          <input type="checkbox" id="wrk" checked={p.useWorker} onChange={e => p.setUseWorker(e.target.checked)} style={{marginLeft: 8}} />
+          <label htmlFor="wrk" style={{cursor:"pointer", margin:0, textTransform:"none", color:"var(--fg)"}}>Worker</label>
+        </div>
 
-      <label>Distribution</label>
-      <select value={p.dist} onChange={e => p.setDist(e.target.value as Distribution)}>
-        <option value="Uniform">Uniform</option>
-        <option value="Gaussian">Gaussian</option>
-        <option value="Nearly-sorted">Nearly-sorted</option>
-      </select>
+        {p.compare && (
+          <select
+            value={p.compareAlgo}
+            onChange={e => p.setCompareAlgo(e.target.value as AlgoId)}
+            style={{marginTop: 4}}
+          >
+            {ALGORITHM_OPTIONS.map(opt => (
+              <option key={opt.id} value={opt.id}>vs. {opt.label}</option>
+            ))}
+          </select>
+        )}
+      </div>
 
-      <label>N = {p.n}</label>
-      <input type="range" min={5} max={200} value={p.n} onChange={e => p.setN(+e.target.value)} />
+      {/* Group 2: Data Settings */}
+      <div className="control-group">
+        <label>Data Distribution</label>
+        <select value={p.dist} onChange={e => p.setDist(e.target.value as Distribution)}>
+          <option value="Uniform">Uniform Random</option>
+          <option value="Gaussian">Gaussian (Normal)</option>
+          <option value="Nearly-sorted">Nearly Sorted</option>
+        </select>
 
-      <label>Speed (ms) = {p.speed}</label>
-      <input type="range" min={10} max={500} value={p.speed} onChange={e => p.setSpeed(+e.target.value)} />
+        <label style={{marginTop: 8}}>Array Size: {p.n}</label>
+        <input type="range" min={10} max={1000} step={10} value={p.n} onChange={e => p.setN(+e.target.value)} />
+      </div>
 
-      <label style={{display:"flex", gap:6, alignItems:"center"}}>
-        <input type="checkbox" checked={p.compare} onChange={e => p.setCompare(e.target.checked)} />
-        Compare Mode
-      </label>
-
-      <button className="btn" onClick={p.onGenerate}>Generate</button>
-      <button className="btn primary" onClick={p.onPlay}>Play</button>
-      <button className="btn" onClick={p.onPause}>Pause</button>
-      <button className="btn" onClick={p.onStep}>Step</button>
+      {/* Group 3: Playback Controls */}
+      <div className="control-group">
+        <label>Speed</label>
+        <input type="range" min={1} max={100} value={p.speed} onChange={e => p.setSpeed(+e.target.value)} />
+        
+        <div className="row" style={{marginTop: 8}}>
+          <button className="btn" onClick={p.onGenerate} disabled={p.loading}>Reset</button>
+          <button className="btn primary" onClick={p.onPlay} disabled={p.loading}>
+            {p.loading ? "Loading..." : "Play"}
+          </button>
+          <button className="btn" onClick={p.onPause}>Pause</button>
+          <button className="btn" onClick={p.onStep}>Step</button>
+        </div>
+      </div>
     </div>
   );
 }
